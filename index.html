@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>K Division Attendance</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            text-align: center;
+        }
+        h1 {
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            width: 320px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px gray;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>K Division Attendance System</h1>
+
+<!-- LOGIN -->
+<div id="loginPage" class="card">
+    <h3>Student Login</h3>
+    <input type="text" id="name" placeholder="Enter Name"><br>
+    <input type="text" id="roll" placeholder="Enter Roll No"><br>
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- MAIN -->
+<div id="mainPage" class="hidden">
+
+    <div class="card">
+        <h3 id="studentInfo"></h3>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="card">
+        <label>Day:</label><br>
+        <select id="day">
+            <option>Monday</option>
+            <option>Tuesday</option>
+            <option>Wednesday</option>
+            <option>Thursday</option>
+            <option>Friday</option>
+        </select><br>
+
+        <label>Time Slot:</label><br>
+        <select id="time">
+            <option>08:15-09:15</option>
+            <option>09:15-10:15</option>
+            <option>10:30-11:30</option>
+            <option>11:30-12:30</option>
+            <option>01:15-02:15</option>
+            <option>02:15-03:15</option>
+            <option>03:30-04:30</option>
+        </select><br>
+
+        <button onclick="markAttendance('Present')">Present</button>
+        <button onclick="markAttendance('Absent')">Absent</button>
+    </div>
+
+    <div class="card">
+        <h3>Attendance Summary</h3>
+        <div id="summary"></div>
+    </div>
+
+</div>
+
+<script>
+// Timetable (K Division simplified)
+const timetable = {
+    "Monday": {"03:30-04:30": "SPEM"},
+    "Tuesday": {"03:30-04:30": "AC"},
+    "Wednesday": {
+        "10:30-11:30": "GFM",
+        "03:30-04:30": "UC"
+    },
+    "Thursday": {
+        "10:30-11:30": "ISTI",
+        "03:30-04:30": "AC"
+    },
+    "Friday": {
+        "01:15-02:15": "FPP",
+        "03:30-04:30": "SPEM"
+    }
+};
+
+// LOGIN
+function login() {
+    let name = document.getElementById("name").value;
+    let roll = document.getElementById("roll").value;
+
+    if (!name || !roll) {
+        alert("Enter details!");
+        return;
+    }
+
+    localStorage.setItem("student", JSON.stringify({name, roll}));
+    showMain();
+}
+
+// LOGOUT
+function logout() {
+    localStorage.removeItem("student");
+    location.reload();
+}
+
+// SHOW MAIN PAGE
+function showMain() {
+    let student = JSON.parse(localStorage.getItem("student"));
+
+    if (!student) return;
+
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("mainPage").classList.remove("hidden");
+
+    document.getElementById("studentInfo").innerText =
+        "Name: " + student.name + " | Roll No: " + student.roll;
+
+    showSummary();
+}
+
+// ATTENDANCE
+function markAttendance(status) {
+    let student = JSON.parse(localStorage.getItem("student"));
+    let key = student.roll;
+
+    let day = document.getElementById("day").value;
+    let time = document.getElementById("time").value;
+
+    let subject = timetable[day][time];
+
+    if (!subject) {
+        alert("No class at this time!");
+        return;
+    }
+
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+
+    if (!data[subject]) {
+        data[subject] = { present: 0, total: 0 };
+    }
+
+    data[subject].total++;
+
+    if (status === "Present") {
+        data[subject].present++;
+    }
+
+    localStorage.setItem(key, JSON.stringify(data));
+
+    alert(subject + " marked " + status);
+    showSummary();
+}
+
+// SUMMARY
+function showSummary() {
+    let student = JSON.parse(localStorage.getItem("student"));
+    if (!student) return;
+
+    let key = student.roll;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    let output = "";
+
+    for (let subject in data) {
+        let percent = ((data[subject].present / data[subject].total) * 100).toFixed(1);
+        output += `<p>${subject} : ${percent}%</p>`;
+    }
+
+    document.getElementById("summary").innerHTML = output;
+}
+
+// AUTO LOAD
+showMain();
+</script>
+
+</body>
+</html>
